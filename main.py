@@ -1,63 +1,70 @@
-# import pandas as pd
-# from download import download_dataset
-# from sqlalchemy import create_engine
-# import kaggle
+import os
+import pandas as pd
+from sqlalchemy import create_engine
+import kaggle
+from dotenv import load_dotenv
 
+#Carregar variáveis de ambiente do arquivo .env
+load_dotenv('envi_variables.env')
 
-# def main():
-#     #dataset do kaggle
-#     dataset_name = 'fronkongames/steam-games-dataset'
-
-#     #caminho do arquivo baixado
-#     dataset_path = './data/'
+#Baixa e descompacta o dataset do Kaggle
+def download_dataset(dataset_name, dataset_path):
     
-#     kaggle.api.dataset_download_files(dataset_name, path = dataset_path, unzip = True)
-#     print(f'Dataset baixado e descompactado em {dataset_path}')
+    kaggle.api.dataset_download_files(dataset_name, path = dataset_path, unzip=True)
+    print(f'Dataset baixado e descompactado em {dataset_path}')
 
-#     DATABASE_URI = 'postgresql+psycopg2://postgres:1234@localhost:5432/DBSTEAMGAMES'
-
-#     #Engine do SQLAlchemy
-#     engine = create_engine(DATABASE_URI)
-
-#     #Criando um dataframe
-#     arquivo = './data/games.csv'
-#     data = pd.read_csv(arquivo)
-#     df = pd.DataFrame(data)
-#     print(f"Dataframe criado com sucesso!")
-
-#     #Jogando o DataFrame em uma nova tabela chamada 'games'
-#     df.to_sql('games', engine, if_exists='replace', index=False)
-
-#     print("Tabela criada e dados inseridos com sucesso!")
+#Cria um DataFrame a partir de um arquivo CSV
+def create_dataframe(file_path):
     
+    try:
+        data = pd.read_csv(file_path)
+        df = pd.DataFrame(data)
+        print("Dataframe criado com sucesso!")
+        return df
+    except Exception as e:
+        print(f"Erro ao criar DataFrame: {e}")
+        return None
 
-# if __name__ == '__main__':
-#     main()
+#Carrega os dados do DataFrame para uma tabela no banco de dados
+def load_data_to_db(df, table_name, db_uri):
     
-
-
-from download import download_dataset
-from etlconnection import get_engine
-from data_processing import load_data_from_csv, save_dataframe_to_db
+    try:
+        engine = create_engine(db_uri)
+        df.to_sql(table_name, engine, if_exists='replace', index=False)
+        print("Tabela criada e dados inseridos com sucesso!")
+    except Exception as e:
+        print(f"Erro ao carregar dados no banco de dados: {e}")
 
 def main():
+    #Configurações vindas do arquivo .env
+    dataset_name = os.getenv('DATASET_NAME')
+    dataset_path = os.getenv('DATASET_PATH')
+    dataset_file = os.getenv('DATASET_FILE')
 
-    download_dataset()
+    #Verificar se os caminhos estão definidos
+    if dataset_path is None:
+        raise ValueError("A variável de ambiente DATASET_PATH não está definida")
+    if dataset_file is None:
+        raise ValueError("A variável de ambiente DATASET_FILE não está definida")
     
-    # URI do banco de dados
-    DATABASE_URI = 'postgresql+psycopg2://postgres:1234@localhost:5432/DBSTEAMGAMES'
-    
-    # Caminho para o arquivo CSV
-    CSV_FILE_PATH = './data/games.csv'
-    
-    # Obtendo o engine do banco de dados
-    engine = get_engine(DATABASE_URI)
-    
-    # Carregando dados do CSV
-    df = load_data_from_csv(CSV_FILE_PATH)
-    
-    # Salvando dados no banco de dados
-    save_dataframe_to_db(df, engine, 'games')
+    file_path = os.path.join(dataset_path, dataset_file)
+    table_name = os.getenv('TABLE_NAME')
+    db_uri = os.getenv('DATABASE_URI')
+
+    #Verificar se a URI do banco de dados está definida
+    if not db_uri:
+        print("Erro: A variável de ambiente DATABASE_URI não está definida.")
+        return
+
+    #Baixar e descompactar o dataset
+    download_dataset(dataset_name, dataset_path)
+
+    #Criar DataFrame
+    df = create_dataframe(file_path)
+
+    if df is not None:
+        #Carregar dados no banco de dados
+        load_data_to_db(df, table_name, db_uri)
 
 if __name__ == '__main__':
     main()
