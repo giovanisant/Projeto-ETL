@@ -1,22 +1,18 @@
 import os
-
 from dotenv import load_dotenv
 from connect_postgresql import load_data_to_db
 from kaggle_dataset import download_dataset
 from kaggle_dataset import create_dataframe
 
 #Carregar variáveis de ambiente do arquivo .env
-load_dotenv('envi_variables.env')
-
-
+load_dotenv('./env_variables.env')
 
 def main():
- 
     dataset_name = os.getenv('DATASET_NAME')
     dataset_path = os.getenv('DATASET_PATH')
     dataset_file = os.getenv('DATASET_FILE')
 
-    #Verificar se os caminhos estão definidos
+    #Verificar se os caminhos estão definidos... Sim o Script tem que parar caso haja erro nessas variáveis
     if dataset_path is None:
         raise ValueError("A variável de ambiente DATASET_PATH não está definida")
     if dataset_file is None:

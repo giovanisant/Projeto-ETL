@@ -1,15 +1,14 @@
 import kaggle
 import pandas as pd
 
-
 def download_dataset(dataset_name, dataset_path):
-    
-    kaggle.api.dataset_download_files(dataset_name, path = dataset_path, unzip=True)
-    print(f'Dataset baixado e descompactado em {dataset_path}')
-
+    try:
+        kaggle.api.dataset_download_files(dataset_name, path = dataset_path, unzip=True)
+        print(f'Dataset baixado e descompactado em {dataset_path}')
+    except Exception as e:
+        print(f'Erro ao efetuar o download: {e}')
 
 def create_dataframe(file_path):
-    
     try:
         data = pd.read_csv(file_path)
         df = pd.DataFrame(data)
